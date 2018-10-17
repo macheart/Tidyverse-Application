@@ -1,1 +1,3 @@
 # automatic-waffle
+
+Class assignments!
