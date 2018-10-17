@@ -1,0 +1,92 @@
+---
+title: "MA [46]15 Homework 4"
+author: "Prisma Lopez"
+output: github_document
+---
+
+## Question 1
+My work is to perform a preliminary analysis of consumer behavior using sales
+data on **Black Friday**. I downloaded the
+[BlackFriday](https://www.kaggle.com/mehdidag/black-friday) dataset from Kaggle,
+and loaded it into a new dataset called `blackfriday`.
+
+**`[==[`**
+Download the `BlackFriday.csv` file from the web page linked above
+and put it in the `data` folder. NOTE: since this is a large file (~25Mb), do
+**not** add this file to your GitHub repository!
+Now modify the `q1` chunk below to create a new dataset called `blackfriday`.
+Check that there are no errors when importing data. Check variables
+``Age`, `Marital_Status`, and `Purchase` for unusual values.
+**`]==]`**
+
+```{r q1, eval = FALSE}
+library(tidyverse)
+blackfriday <- read_csv("data/BlackFriday.csv")
+problems(blackfriday) # none
+```
+
+
+## Question 2
+
+```{r q2}
+agems <- blackfriday[,c("Age","Marital_Status")]
+# Alternative
+agems <- blackfriday %>% unite(agems, Age, Marital_Status,sep="_")  # make sure you get the breakdown of marital status by age group
+ggplot(agems) + geom_boxplot(aes(y = Purchase, x = agems ))
+
+
+```
+
+
+## Question 3
+
+
+
+```{r q3}
+# which(is.na(blackfriday$Product_Category_1)) # There are no missing values in this column
+# which(is.na(blackfriday$Product_Category_2)) # many missing values
+# which(is.na(blackfriday$Product_Category_3)) # many missing values 
+Prod_Category_1 <- blackfriday[,c("Product_Category_1","Product_Category_2","Product_ID")]
+which(is.na(blackfriday$Product_ID)) # no missing valuesin Product_ID column 
+which(is.na(Prod_Category_1$Product_ID)) # no missing valuesin Product_ID column 
+Prod_Category_1 <- subset(Prod_Category_1, !is.na(Product_Category_2)) # 370591      3
+which(is.na(Prod_Category_1$Product_Category_2)) # no missing values 
+Prod_Category_2 <- blackfriday[,c("Product_Category_1","Product_Category_3","Product_ID")]
+which(is.na(Prod_Category_2$Product_ID)) # no missing valuesin Product_ID column 
+Prod_Category_2 <- subset(Prod_Category_2, !is.na(Product_Category_3)) # 164278      3
+# blackfriday_cat <- merge(Prod_Category_1,Prod_Category_2,by=c("Product_ID")) Takes too long
+
+###### Alternatively
+blackfriday_cat <- blackfriday %>%  # 1072446      11
+  gather(key="Prod_Category",Prod_Category_ID,Product_Category_1,Product_Category_2, Product_Category_3, na.rm=TRUE)
+
+```
+
+
+## Question 4
+
+**`[==[`**
+Create a new `q4` chunk to make boxplots of purchase price by product category.
+Reorder the categories by increasing purchase price and color the boxplots by
+the number of purchases. Any apparent patterns between purchase price, counts,
+and product categories? Explain why this operation is easier after processing
+product category in Question 3.
+**`]==]`**
+```{r q4}
+blackfriday_cat %>% 
+  group_by(Prod_Category_ID)%>%
+  mutate(purchase_count = n()) %>%
+  ggplot(aes(x=reorder(Prod_Category_ID,Purchase,FUN=median),y=Purchase))+
+  geom_boxplot(aes(fill=purchase_count))
+
+```
+
+
+# Discussion
+# From the boxplots in q2, it seems like for the following age groups:
+# 36-35 and 55+, purchase price of gifts goes down depending on marriage status of 1.
+# Otherwise, there is no difference in purchase price based on marital status or in some cases, purchase 
+# price is lower for non-married couples (0) than for married couples (1). 
+# There are more counts for product categories at the lower purchase price range (ID = 5, or 8). 
+# The rearrangement operation is more feasible once we've formatted the dataframe as in q3. because we do not have to deal with missing values (NA) in any of the rows in either Product_Category column.
+
