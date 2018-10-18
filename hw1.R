@@ -77,24 +77,4 @@ q4 <- ggplot(data = msleep) + geom_bar(
 q4 + coord_polar()
 ```
 
-# Question 1 Discussion
-After the log transformation, the plot does seem to be linear. Meaning, there is a positive correlation between bodyweight and brain weight. Though, interestingly enough, species classified as omnivores or herbivores are spread throughout the bodyweight spectrum. Meaning, there are omnivores/herbivores animals represented at many bodyweights. Insectivore species are not spread througout the bodyweight spectrum but range below the 100 bodywt unit. Herbivores are the largest species, weighing up to over 1000 bodywt units. The carnivores range between 5 -100 body weight units. 
-
-# Question 2 Discussion
-Most obvious from the plot, the largest animals (in bodyweight) are the herbivores and carnivores. The average (median) carnivore is larger than the average (median) herbivore but, carnivores do not grow to the extent that some herbovores grow (highlighted as outlier points). The average body size of the insectivores group were smaller than all the other animal types when grouped according to their diet. These assessments were made assuming adult animals were taken into account in this dataset. The body weight range of the omnivore group is large and has a median body weight the same as the herbivores.
-
-
-# Question 3 Discussion
-This plot was produced based on the best interpretation of the question asked. The fraction of total sleep per conservation class is shown with conservation status on the x-axis. Fraction of total sleep based on 'vore' class is color coded and grouped by conservation class. Crossbars indicate the min and max y-values values per conservation status. The mean fraction of sleep per conservation class is indicated by a middle bar in the crossbar.
-
-According to the plot, the group classified as at lowest risk of extinction (lc), contains a diverse group of animals of all types of 'vore'. For this group, the range of sleep_total/24 values is large as compared to those of  the domesticated, (nt), or (cd) group. However, given the sample size of the latter three groups, conclusions about level of endangerment depending on sleep time may not be appropriate.
-
-Notably, those species within the nearly threatened group (nt) have the second shortest sleep_total/24 range as compared to the other groups and constitute a high percentage of total sleep time in the dataset. 
-
-Also, those within the (en) group, or the species at highest risk of extinction in the wild, with the exception of one species, the group's sleeping range is short but, those animals sleep alot given they are only 4 in that conservation group and thus,constitue a small fraction of species in the dataset. Interestingly enough, those species classified as (vu) or highest risk of endangerment  in the wild, constitute only herbivores and carnivores and as a group have a long sleeping range.
-
-Unfortunately, there were a lot of species in the msleep dataset whose conservation classification is not known. This definately hinders making any further in depth assesment and conclusions.
-
-
-
 
