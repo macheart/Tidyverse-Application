@@ -1,0 +1,160 @@
+---
+title: "MA [46]15 Homework 7"
+author: "Prisma Lopez"
+output: github_document
+---
+
+
+## Question 1
+
+```{r q1, eval = FALSE}
+library(tidyverse)
+library(nycflights13)
+library(geosphere)
+# Function
+# `lon` and `lat` can be vectors
+dist_geo <- function (lon_from, lat_from, lon_to, lat_to) {
+  geosphere::distGeo(cbind(lon_from, lat_from), c(lon_to, lat_to))
+}
+
+airports %>% 
+  filter(name == 'John F Kennedy Intl') %>% 
+  select(lat,lon) # 
+
+c <- airports$faa %in% flights$dest
+sum(c, na.rm = TRUE) # 101 airports that are the same
+
+
+a <- airports %>% 
+  select(faa,lon,lat) %>%
+  filter(!(faa == 'JFK')) %>%
+  mutate(dest = faa,dist=dist_geo(lon,lat,-73.77893,40.63975)) %>%
+  select(dest:dist)
+
+flights %>% 
+  filter(origin == 'JFK') %>%
+  inner_join(a) %>% 
+  ggplot() + geom_point(aes(x=log(distance),y=log(dist))) 
+
+# The geometric coordinates to JFK are: longitude:-73.77893; latitude:40.63975
+# The plot of log(dist) vs. log(distance) suggest that the default distances and the distances computed by the dist_geo function are in agreement. 
+
+```
+
+
+
+## Question 2
+
+```{r}
+flights_mt <- flights %>% # joining by dest
+  filter(!is.na(dep_time)) %>%
+  mutate(madeup_time = dep_delay- arr_delay) %>%
+  filter(origin == 'JFK') %>%
+  inner_join(a) 
+  
+flights_mt_model <- lm(madeup_time ~ log(dist), data = flights_mt) 
+beta <- coef(flights_mt_model)
+
+
+ggplot(flights_mt, aes(x=log(dist), y=madeup_time)) + geom_point(alpha=0.3) + geom_abline(intercept = beta[1], slope = beta[2],color='red')
+
+# 1.693734*log(3982943) + -17.510067  # linear model 
+
+# Do the estimated linear coefficients verify your assumption? If you're traveling to Los Angeles
+# international airport and your flight left JFK with a 30 minute delay, what is
+# your prediction for the arrival delay according to the fitted model?
+
+# The estimated linear coefficients verify the assumption that the greater the travel distance for a flight not on time for the departure, the more time it has to make up in airtime.
+# Using the linear model, it is predicted that there is an expected arrival delay of 8.230509 minutes (using dist=3982943 )
+
+
+```
+
+## Question 3
+
+```{r q3, eval = FALSE}
+rep_flights <- flights %>%
+  group_by(carrier) %>% 
+  filter(n_distinct(flight) > 100) %>%
+  group_by(carrier, flight) %>% 
+  filter(n() > 50) %>% 
+  ungroup()
+
+flights_load <- flights %>% 
+  group_by(origin,month,day) %>% 
+  mutate(trips=n()) # counts number of trips per day per origin
+
+rf <- merge(rep_flights, flights_load)
+r<-rf %>%
+  filter(!is.na(dep_delay),!is.na(arr_delay)) 
+
+r$ontime <- NULL  
+r$ontime <- rep(0, nrow(r))
+
+index <- c(0, 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15)
+values <- c(1, 1,1,1,1,1,1,1,1,1,1,1,1,1,1,1)
+r$ontime <- values[match(r$arr_delay, index)]
+
+r[is.na(r)]<-0 
+r
+
+```
+
+
+
+
+## Question 4
+
+
+```{r}
+library(modelr)
+###################### Attempt 1
+#logm <- glm(ontime ~ trips, data = r, family = binomial) 
+#beta <- coef(logm)
+
+#add_predictions <- function (data, model, var = "pred", ...) { data[[var]] <- stats::predict(model, data, ...)
+#data }
+
+#mpg_mod1 <- glm(ontime ~ trips + carrier, r, family = binomial)
+#mpg_mod2 <- glm(ontime ~ trips * carrier, r, family = binomial)
+#grid <- r %>% data_grid(trips, carrier)
+#(grid <- bind_rows(grid %>% add_predictions(mpg_mod1, type = "response") %>% mutate(glm = "mod1"),grid %>% add_predictions(mpg_mod2, type = "response") %>% mutate(glm = "mod2")))
+# trips
+#ggplot(r, aes(trips)) + geom_point(aes(y = ontime)) +
+  #geom_line(aes(y = pred), data = grid, color = "red", size = 1)
+
+# carrier
+#ggplot(r, aes(carrier)) + geom_point(aes(y = ontime)) +
+  #geom_line(aes(y = pred), data = grid, color = "red", size = 1)
+
+###################### Attempt 2
+# Linear Model interactions between predictors
+#mod1 <- glm(ontime ~ trips + carrier, r,family=binomial) # altern: mod1 <- lm(ontime ~ trips + carrier - 1, r); coef(mod1)
+#mod2 <- glm(ontime ~ trips + carrier + trips:carrier, r,family=binomial)
+#(grid <- r %>% data_grid(trips, carrier) %>% # needs both variables
+  #gather_predictions(mod1, mod2, .model = "glm"))
+
+#ggplot(r, aes(trips, ontime, color = carrier)) + geom_point() +
+  #geom_line(aes(y = pred), data = grid, size = 1) +
+  #facet_wrap(~ glm)
+
+###################### Submission
+logm <- glm(ontime ~ trips + carrier, r,family = binomial) #logistic regression model of `ontime` on `trips` and `carrier`, but with an intercept 
+
+sc <- coef(glm(ontime ~ trips + carrier - 1, r,family = binomial)) # Model without intercept. Just coefficients 
+sc
+
+sc <- as.tibble(as.list(sc[-1])) %>% gather(carrier, coef)  # use to plot
+
+ggplot(sc, aes(reorder(factor(carrier), coef), coef)) + geom_point() +
+  coord_flip() + labs(x = "carrier", y = "on-timeness")
+
+
+
+# For the the logm model: The coefficient for trips is positive compared to those of the other elements in the model suggesting that as the number of trips increases, the ontimeness increases. This is interesting and is not expected. Though, the coefficients of every carrier is negative and they are making the trips. Suggesting that some carriers are more ontime than others. So, the coefficients of the carriers are telling of their ontimeness generally.
+
+# If flying Delta, how many trips would be needed for your predicted probability of the flight being on-time to be 50%?
+# 26 flights!
+
+```
+

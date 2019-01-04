@@ -1,0 +1,107 @@
+---
+title: "MA [46]15 Homework 6"
+author: "Prisma Lopez"
+output: github_document
+---
+
+
+## Question 1
+
+```{r}
+### FOR THE ASSIGNMENT:
+#install.packages("magrittr")
+library(magrittr)
+library(tidyverse)
+t_alpha_2 <- 
+  function(df=Inf,a=0.05) { # setting values as default
+  sample_t_score <- qt(c(a,(1-a)),df = df)  
+  value <- sample_t_score[which(sample_t_score > 0)] # select the positive value
+  return(value)
+}
+# df = Inf means the degrees of freedom approaches an infinite value whereby, the student's t-distribution (tdf) approximates the Standard Normal Distribution (T)
+
+
+
+### NOT FOR GRADING: 
+#df[sample(1:nrow(df), 10, rep = T, prob = df$"p(x,y)"), -ncol(df)] # sample rows from the data frame 
+#nrow(sample))  
+#sample_t_score[which(sample_t_score > 0)] # select the positive value
+```
+
+
+
+
+## Question 2
+
+```{r}
+t_data <- function(x,a) {
+  mean = mean(x,na.rm = FALSE)
+  stdev = sd(x,na.rm = FALSE)
+  if (missing(a)) {
+    a = 0.05 # assign it alpha of 5%
+    lower = mean - (t_alpha_2((length(x)-1),a)*(stdev/sqrt(length(x))))
+    upper = mean + (t_alpha_2((length(x)-1),a)*(stdev/sqrt(length(x))))
+    return(tibble(y = mean,
+                ymin = lower,
+                ymax = upper))
+  }
+  else
+    lower = mean - (t_alpha_2((length(x)-1),a)*(stdev/sqrt(length(x))))
+    upper = mean + (t_alpha_2((length(x)-1),a)*(stdev/sqrt(length(x))))
+    return(tibble(y = mean,
+                ymin = lower,
+                ymax = upper))
+
+}
+###
+mpg <- data.frame(mpg)
+ggplot(mpg, aes(drv, hwy)) +
+  stat_summary(fun.data="t_data", 
+               fun.ymin = min,
+               fun.ymax = max,
+               fun.y = mean,
+               geom="crossbar", 
+               color = 'red',
+               width=0.5) +
+  geom_jitter()
+
+```
+
+
+## Question 3
+
+
+
+```{r}
+z_score <- function(x,mu,sigma) {
+    #print( ifelse(missing(mu), 'mu not specified'))
+    #print( ifelse(missing(sigma), 'sigma not specified'))
+    if (missing(mu)|missing(sigma)) { # appropriate because when you call the function with only 2 inputs, function does not know if numeric input is for mu or sigma
+      mu = mean(x) # re-define
+      sigma = sd(x) # re-define
+      zscores <- vector("double", length(x))
+      for (i in seq_along(x)) {
+        zscores[[i]] <- (x[[i]] - mu) / sigma
+      }
+    }
+    else
+      zscores <- vector("double", length(x))
+      for (i in seq_along(x)) {
+        zscores[[i]] <- (x[[i]] - mu) / sigma
+      }
+    return(zscores) # proper positioning
+}
+
+
+mpg %>% 
+  group_by(drv) %>% 
+  mutate(hwy_zscores = z_score(hwy)) %>% 
+  ggplot(aes(drv, hwy)) + stat_summary(fun.data="t_data", 
+               fun.ymin = min,
+               fun.ymax = max,
+               fun.y = mean,
+               geom="crossbar", 
+               color = 'red',
+               width=0.5) + geom_jitter()
+```
+
