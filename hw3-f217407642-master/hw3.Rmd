@@ -1,0 +1,101 @@
+---
+title: "MA [46]15 Homework 3"
+author: "Prisma Lopez"
+output: github_document
+---
+
+## Question 1
+
+My work is to perform a preliminary EDA of the **real state properties** in
+Boston in 2018. To this end, I downloaded the "Property Assessment FY2018"
+data file from the [Analyze Boston](https://data.boston.gov/dataset/property-assessment) web page, and
+loaded it into a new dataset called `property`.
+
+
+```{r q1, eval = FALSE}
+library(tidyverse)
+p <- read_csv("data/ast2018full.csv") # read_csv instead of read.csv, makes a difference
+
+#which(p$GROSS_TAX == 000000000000) # filter rows (entries/properties) that are tax exempt 
+#which(p$NUM_FLOORS == 5)
+#which(names(property)=="PTYPE") # tells you which column number PTYPE is: 9
+#which(names(property)=="LU") # 10
+#which(names(property)=="GROSS_TAX") # 20
+#which(names(property)=="NUM_FLOORS") # 26
+
+property <- p[,c("PTYPE","LU","GROSS_TAX", "NUM_FLOORS")] # create df with columns indicated and OMITS 172591 rows
+dim(property) # 172841 rows 4 columns
+
+problems(property) # none
+```
+
+
+## Question 2
+
+There are many "unusual" values, including tax exempt properties. Next, I'm
+filtering out these cases to get a new dataset, `property_rep`.
+
+
+```{r q2}
+# Method 1 (DO NOT GRADE)
+#property$GROSS_TAX <- as.numeric(property$GROSS_TAX) # need to convert GROSS_TAX column to numeric
+#ptype <- property %>% 
+  #group_by(PTYPE) %>% 
+  #summarize(median = median(GROSS_TAX,na.rm = TRUE)) %>% 
+  #filter(median < 100000000)
+#ptype <- ptype$PTYPE # save PTYPE as a list
+#property_rep <- property %>% 
+  #filter(PTYPE %in% ptype) %>% 
+  #filter(NUM_FLOORS >= 5, GROSS_TAX != 0)
+
+# Alternatively:
+property_rep <-property %>% 
+  group_by(PTYPE) %>% 
+  filter(median(GROSS_TAX)<100000000) %>%
+  filter(n()>=5)%>%
+  ungroup() %>%
+  filter(GROSS_TAX>0)
+
+which(property_rep$LU == 'EA') # check there are no tax exempt obs in table
+
+```
+
+## Question 3
+
+To summarize what I have in `property_rep`, here is a table with the
+proportions of properties by land use (`LU`), ordered by proportion, and the cumulative proportions.
+
+```{r q3}
+property_rep %>% 
+  group_by(LU) %>% 
+  summarize(count = n()) %>%
+  mutate(freq = count/sum(count)) %>% 
+  arrange(freq) %>%
+  select(LU,freq)
+
+## Alternatively:
+property_rep %>% 
+  group_by(LU)%>%
+  summarize(count=n())%>%
+  transmute(LU=LU,Prop=count/sum(count))%>%
+  arrange(Prop)%>%
+  mutate(CumProp=cumsum(Prop))
+
+
+```
+
+
+## Question 4
+
+Finally, I summarize my findings with log gross tax boxplots for each land
+use.
+
+```{r q4}
+property_rep %>% 
+  group_by(LU) %>% 
+  mutate(count = n()) %>%
+  ggplot() + geom_boxplot(aes(reorder(LU,GROSS_TAX,FUN=median),log(GROSS_TAX),fill=count)) # Calculate median in plot code so you don't get rid of count column
+```
+
+# Discussion
+# After filtering as described above, land use (LU) codes R1, R2, R3, and CD have the highest counts out of 13 LU types. These LU types all correspond to domestic (residential) properties. As shown by the boxplot above, these 4 residential types all have similar GROSS_TAX medians but together do not have the highest medians as compared to the other land use types. Those LU's with the highest medians are A and C types. 
