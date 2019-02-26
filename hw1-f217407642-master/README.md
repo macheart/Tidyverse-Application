@@ -1,2 +1,2 @@
 # hw1
-Homework 1
+In this homework I analyze the `msleep` dataset from package `ggplot2`.
