@@ -1,3 +1,3 @@
-# automatic-waffle
+# Tidyverse-Application
 
 Class assignments!
